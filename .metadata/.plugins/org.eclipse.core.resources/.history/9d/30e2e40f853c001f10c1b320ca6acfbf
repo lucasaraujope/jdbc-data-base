@@ -1,0 +1,75 @@
+package application;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
+
+import db.DB;
+
+public class Program {
+
+	public static void main(String[] args) {
+		
+		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+		Connection conn = null;
+		PreparedStatement st = null;
+		
+		try {
+			conn = DB.getConnection();
+			
+			st = conn.prepareStatement(
+					"INSERT INTO seller " //insira na tabela seller os dados abaixo
+					+" (Name, Email, BirthDate, baseSalary, DepartmentID)"
+					+ "VALUES " //Com os sefuintes valores
+					+"(?, ?, ?, ?, ?)", //valores placeholders para serem alterados depois
+					Statement.RETURN_GENERATED_KEYS);
+			
+			//dados que serão inseridos na tabeça
+			st.setString(1,  "Lucas Araujo");
+			st.setString(2, "lucas.araujope22@gmail.com");
+			/*sempre que vamos enviar uma data para o banco de dados temos que 
+			instanciar um novo objeto java.sql.date*/
+			st.setDate(3, new java.sql.Date(sdf.parse("23/07/1995").getTime()));
+			st.setDouble(4, 10000.0);
+			st.setInt(5, 4);
+			
+			/*variável que está recebendo o comando executeUpdate para poder inserir 
+			os valores acima na tabela*/
+			int rowsAffected = st.executeUpdate();
+			
+			/*criando um condicionador para inserir um valor no banco caso o valor do 
+			rows affected seja maior que 1*/
+			if (rowsAffected > 0) {
+				/*se for será intnciado um ResultSet para recuperar um determinado valor
+				do banco, e esse valor será uma ou mais chaves geradas pelo st*/
+				ResultSet rs = st.getGeneratedKeys();
+				//enquanto o next não retornar null o laço ficará repetindo
+				while(rs.next()) {
+					//criada uma variável que recebe o valor que for gerado pelo rs
+					int id = rs.getInt(1);
+					//exibindo o valor que foi capturado pela variável id
+					System.out.println("Done! Id = " + id);
+				}
+			}else {
+				System.out.println("No rows affected!");
+			}
+				
+			
+			
+		}catch(SQLException e) {
+			e.printStackTrace(); //catch para previnir qualquer exceção do SQL
+		}catch (ParseException e ) {
+			e.printStackTrace(); //catch para previnir qualquer parseException do date
+		}finally { //fechando as conexões abertas
+			DB.closeStatment(st);
+			DB.closeConnection();
+		}
+	
+		
+	}
+}

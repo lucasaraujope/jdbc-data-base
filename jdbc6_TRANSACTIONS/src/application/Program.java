@@ -1,0 +1,56 @@
+package application;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import db.DB;
+import db.DBException;
+
+public class Program {
+
+	public static void main(String[] args) {
+
+		Connection conn = null;
+		Statement st = null;
+
+		try {
+			conn = DB.getConnection();
+
+			conn.setAutoCommit(false); /*criando um auto commit controlavel por conta do parâmetro false
+			que só vai confirmar a transação quando nós indicarmos*/
+			st = conn.createStatement(); //para que o createStatement funcione precisamos do Statemente
+			
+			
+			//Atualizando informação no banco de dados
+			int rows1 = st.executeUpdate("UPDATE seller SET BaseSalary = 2090 WHERE DepartmentId = 1");
+			
+			//regra para dar erro que será tratado pelo rollback e voltará o banco ao estado anterior
+			/*int i = 1;
+			if(i < 2) {
+				throw new SQLException("Fake Error");
+			}*/
+			
+			int rows2 = st.executeUpdate("UPDATE seller SET BaseSalary = 3090 WHERE DepartmentId = 2");
+			
+			//confirmando commit para que o setAutoCommit possa fazer o processo de commit
+			conn.commit();
+			
+			System.out.println("Rows1: " + rows1);
+			System.out.println("Rows2: " + rows2);
+			
+		} catch (SQLException e) {
+			try{ 
+				//tratando exceção e usando rollback para fazer com que o banco volte ao estado anterior
+				conn.rollback();
+				throw new DBException("Transaction rolled back! Caused by: " + e.getMessage());
+			}catch(SQLException e1) {
+				throw new DBException("Error trying to rollback! Cause by: " + e1.getMessage());
+			}
+		} finally { // fechando as conexões abertas
+			DB.closeStatment(st);
+			DB.closeConnection();
+		}
+
+	}
+}
